@@ -33,7 +33,6 @@ module RiakTestServer
         docker "rm #{@container_name}"
       end
 
-
       docker %W(
         run
         --name #{@container_name}
@@ -62,14 +61,14 @@ module RiakTestServer
     end
 
     def check
-      retries = 5
+      retries = 20
       loop do
-        result = console("riak_kv_console:vnode_status([]).").chomp.strip
-        break if result !~ /no active vnodes/i
+        result = console("riak_kv_console:vnode_status([]).")
+        break if result.split(/^VNode: \w+$/i).size >= 4 # at least 3 vnodes are available
 
         raise "vnodes not starting in time" if retries == 0
         retries -= 1
-        sleep 0.1
+        sleep 1
       end
     end
 
@@ -84,9 +83,10 @@ module RiakTestServer
 
     PROMPT = /\(riak@[\w\.]+\)(\d+)>\s*/
     def console(command)
+      raise "Command not terminated with a `.`: #{command}" unless command =~ /\.\s*\z/
       attach do |io|
         io.puts(command)
-        response = io.expect(PROMPT, 2)
+        response = io.expect(PROMPT, 10)
         if response
           PROMPT.match(response.first).pre_match
         else

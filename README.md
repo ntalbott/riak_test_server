@@ -48,7 +48,7 @@ You can override a bunch of defaults by passing options to `RiakTestServer.setup
 * `:container_host` - hostname or IP of the container host [default: `"docker"`]
 * `:http_port` - port to expose Riak HTTP on on the `container_host` [default: `"8098"`]
 * `:pb_port` - port to expose Riak Protocol Buffers on on the `container_host` [default: `"8087"`]
-* `:container_name` - name to use for the container when `docker run`-ing it;  [default: `"riak_test_server"`]handy to change if you want different containers for different apps
+* `:container_name` - name to use for the container when `docker run`-ing it; handy to change if you want different containers for different apps [default: `"riak_test_server"`]
 * `:repository` - supplier of docker images [default: `"ntalbott/riak_test_server"`]
-* `:tag` - docker image to use; `docker search ntalbott/riak_test_server` to see  [default: `"latest"`]if other Riak versions are available
+* `:tag` - docker image to use; `docker search ntalbott/riak_test_server` to see if other Riak versions are available [default: `"latest"`]
 * `:docker_bin` - name of the docker binary [default: `"docker"`]
