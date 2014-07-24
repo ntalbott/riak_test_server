@@ -5,21 +5,24 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections
 
 RUN apt-get update
 
-# Install packages
-RUN apt-get install -y \
-#   for downloading Riak
-    wget
+# Install wget for downloading Riak
+RUN apt-get install -y wget
 
 # Download and install Riak
 RUN wget -nv <%= ENV["DOWNLOAD_URL"] %>
 RUN dpkg -i <%= ENV["DOWNLOAD_URL"].split("/").last %>
 
 # Put our custom Riak config in place
-ADD app.config /etc/riak/app.config
+ADD app.config /etc/riak/<%= ((ENV["VERSION"].split(".").first.to_i < 2) ? "app.config" : "riak.conf") %>
+ADD advanced.config /etc/riak/advanced.config
 RUN echo "ulimit -n 4096" >> /etc/default/riak
 RUN mkdir -p /tmp/riak
+
+# Clean up
+RUN rm <%= ENV["DOWNLOAD_URL"].split("/").last %>
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Expose Riak HTTP & Protocol Buffers
 EXPOSE 8087 8098
 
-CMD ["/usr/sbin/riak", "console"]
+CMD ["/bin/sh", "-c", "/usr/sbin/riak console"]
