@@ -1,13 +1,13 @@
 [
  {riak_api, [
-             {pb_ip, "0.0.0.0"},
-             {pb_port, 8087}
+            {pb_ip,   "0.0.0.0" },
+            {pb_port, 8087 }
             ]},
  {riak_core, [
               {ring_state_dir, "/var/lib/riak/ring"},
-              {ring_creation_size, 64},
               {http, [ {"0.0.0.0", 8098 } ]},
               {handoff_port, 8099 },
+              {dtrace_support, false},
               {platform_bin_dir, "/usr/sbin"},
               {platform_data_dir, "/var/lib/riak"},
               {platform_etc_dir, "/etc/riak"},
@@ -16,17 +16,26 @@
              ]},
  {riak_kv, [
             {storage_backend, riak_kv_memory_backend},
-            {map_js_vm_count, 8},
-            {reduce_js_vm_count, 6},
-            {hook_js_vm_count, 2},
-            {mapper_batch_size, 5},
+            {anti_entropy, {on, []}},
+            {anti_entropy_build_limit, {1, 3600000}},
+            {anti_entropy_expire, 604800000},
+            {anti_entropy_concurrency, 2},
+            {anti_entropy_tick, 15000},
+            {anti_entropy_data_dir, "/var/lib/riak/anti_entropy"},
+            {anti_entropy_leveldb_opts, [{write_buffer_size, 4194304},
+                                         {max_open_files, 20}]},
+            {mapred_name, "mapred"},
+            {mapred_2i_pipe, true},
+            {map_js_vm_count, 8 },
+            {reduce_js_vm_count, 6 },
+            {hook_js_vm_count, 2 },
             {js_max_vm_mem, 8},
             {js_thread_stack, 16},
             {http_url_encoding, on},
             {vnode_vclocks, true},
-            {legacy_keylisting, false},
             {listkeys_backpressure, true},
-            {test, true}
+            {test, true},
+            {fsm_limit, 50000}
            ]},
  {riak_search, [
                 {enabled, false}
@@ -37,6 +46,7 @@
                 {max_compact_segments, 20}
                ]},
  {bitcask, [
+             {io_mode, erlang},
              {data_root, "/var/lib/riak/bitcask"}
            ]},
  {eleveldb, [
@@ -44,12 +54,12 @@
             ]},
  {lager, [
             {handlers, [
-                {lager_console_backend, warning},
-                {lager_file_backend, [
-                    {"/var/log/riak/error.log", error, 10485760, "$D0", 5},
-                    {"/var/log/riak/console.log", info, 10485760, "$D0", 5}
-                ]}
-            ]},
+                           {lager_console_backend, warning},
+                           {lager_file_backend, [
+                               {"/var/log/riak/error.log", error, 10485760, "$D0", 5},
+                               {"/var/log/riak/console.log", info, 10485760, "$D0", 5}
+                           ]}
+                       ] },
             {crash_log, "/var/log/riak/crash.log"},
             {crash_log_msg_size, 65536},
             {crash_log_size, 10485760},
@@ -60,7 +70,7 @@
  {riak_sysmon, [
          {process_limit, 30},
          {port_limit, 2},
-         {gc_ms_limit, 100},
+         {gc_ms_limit, 0},
          {heap_word_limit, 40111000},
          {busy_port, true},
          {busy_dist_port, true}

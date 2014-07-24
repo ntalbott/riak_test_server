@@ -2,10 +2,12 @@ require "expect"
 
 module RiakTestServer
   def self.setup(options={})
-    @server ||= Server.new(options)
+    @server.stop if @server
+    @server = Server.new(options)
 
     @server.setup
     @server.start
+    @server.check
     @server.clear
   end
 
@@ -31,6 +33,7 @@ module RiakTestServer
         docker "rm #{@container_name}"
       end
 
+
       docker %W(
         run
         --name #{@container_name}
@@ -42,6 +45,11 @@ module RiakTestServer
       ).join(" ")
     end
 
+    def stop
+      @console_io.close if @console_io
+      docker "stop #{@container_name}"
+    end
+
     def setup
       unless docker("images") =~ /#{repository}\s+#{tag}/
         docker "pull #{repository}:#{tag}"
@@ -51,6 +59,18 @@ module RiakTestServer
     def clear
       result = console("{riak_kv_memory_backend:reset(), boom}.").chomp.strip
       raise "Unable to reset backend (#{result})" unless result == "{ok,boom}"
+    end
+
+    def check
+      retries = 5
+      loop do
+        result = console("riak_kv_console:vnode_status([]).").chomp.strip
+        break if result !~ /no active vnodes/i
+
+        raise "vnodes not starting in time" if retries == 0
+        retries -= 1
+        sleep 0.1
+      end
     end
 
     private
