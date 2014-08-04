@@ -1,6 +1,9 @@
 require "expect"
+require "timeout"
 
 module RiakTestServer
+  class Error < StandardError; end
+
   def self.setup(options={})
     @server.stop if @server
     @server = Server.new(options)
@@ -76,9 +79,13 @@ module RiakTestServer
 
     def docker(command)
       full_command = "#{@docker_bin} #{command}"
-      `#{full_command} 2>&1`.tap do |output|
-        raise "#{full_command} failed: #{output}" unless $?.exitstatus == 0
+      Timeout.timeout(1) do
+        `#{full_command} 2>&1`.tap do |output|
+          raise "#{full_command} failed: #{output}" unless $?.exitstatus == 0
+        end
       end
+    rescue Timeout::Error
+      raise RiakTestServer::Error, "Timed out trying to interact with Docker; is your Docker host running?"
     end
 
     PROMPT = /\(riak@[\w\.]+\)(\d+)>\s*/
