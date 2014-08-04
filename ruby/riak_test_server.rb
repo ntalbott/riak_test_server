@@ -44,17 +44,17 @@ module RiakTestServer
         --publish=#{@http_port}:8098
         --publish=#{@pb_port}:8087
         #{@repository}:#{@tag}
-      ).join(" ")
+      ).join(" "), 5
     end
 
     def stop
       @console_io.close if @console_io
-      docker "stop #{@container_name}"
+      docker "stop #{@container_name}", 15
     end
 
     def setup
-      unless docker("images") =~ /#{repository}\s+#{tag}/
-        docker "pull #{repository}:#{tag}"
+      unless docker("images", 5) =~ /#{repository}\s+#{tag}/
+        docker "pull #{repository}:#{tag}", 60
       end
     end
 
@@ -77,15 +77,15 @@ module RiakTestServer
 
     private
 
-    def docker(command)
+    def docker(command, timeout=1)
       full_command = "#{@docker_bin} #{command}"
-      Timeout.timeout(1) do
+      Timeout.timeout(timeout) do
         `#{full_command} 2>&1`.tap do |output|
           raise "#{full_command} failed: #{output}" unless $?.exitstatus == 0
         end
       end
     rescue Timeout::Error
-      raise RiakTestServer::Error, "Timed out trying to interact with Docker; is your Docker host running?"
+      raise RiakTestServer::Error, "Timed out running `#{full_command}` after #{timeout} seconds; is your Docker host running?"
     end
 
     PROMPT = /\(riak@[\w\.]+\)(\d+)>\s*/
