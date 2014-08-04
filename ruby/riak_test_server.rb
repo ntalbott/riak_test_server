@@ -21,6 +21,7 @@ module RiakTestServer
   class Server
     attr_reader :repository, :tag
     def initialize(options)
+      @force_restart = (options[:force_restart] || false)
       @container_host = (options[:container_host] || "docker")
       @container_name = (options[:container_name] || "riak_test_server")
       @http_port = (options[:http_port] || "8098")
@@ -32,7 +33,8 @@ module RiakTestServer
 
     def start
       if docker("ps -a") =~ /\b#{@container_name}\b/
-        docker "stop #{@container_name}"
+        return unless @force_restart
+        stop
         docker "rm #{@container_name}"
       end
 

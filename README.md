@@ -52,3 +52,4 @@ You can override a bunch of defaults by passing options to `RiakTestServer.setup
 * `:repository` - supplier of docker images [default: `"ntalbott/riak_test_server"`]
 * `:tag` - docker image to use; `docker search ntalbott/riak_test_server` to see if other Riak versions are available [default: `"latest"`]
 * `:docker_bin` - name of the docker binary [default: `"docker"`]
+* `:force_restart` - will force the hard restart of any running container (slow) [efault: `false`]
