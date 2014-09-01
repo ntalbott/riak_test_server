@@ -1,5 +1,7 @@
 # Unreleased
 
+* Kill stopped containers even when not :force_restart.
+
 # 1.1.0
 
 * Better timeouts for docker commands.

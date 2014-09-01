@@ -1,5 +1,7 @@
 require "expect"
 require "timeout"
+require "open3"
+require "json"
 
 module RiakTestServer
   class Error < StandardError; end
@@ -32,10 +34,16 @@ module RiakTestServer
     end
 
     def start
-      if docker("ps -a") =~ /\b#{@container_name}\b/
-        return unless @force_restart
-        stop
-        docker "rm #{@container_name}"
+      details = JSON.parse(docker("inspect #{@container_name}", allowed_exits: [0, 1]))
+      if details.size > 0
+        detail = details.first
+        running = (detail["State"] && detail["State"]["Running"])
+        if(@force_restart || !running)
+          stop
+          docker "rm #{@container_name}"
+        else
+          return
+        end
       end
 
       docker %W(
@@ -46,17 +54,17 @@ module RiakTestServer
         --publish=#{@http_port}:8098
         --publish=#{@pb_port}:8087
         #{@repository}:#{@tag}
-      ).join(" "), 5
+      ).join(" "), timeout: 5
     end
 
     def stop
       @console_io.close if @console_io
-      docker "stop #{@container_name}", 15
+      docker "stop #{@container_name}", timeout: 15
     end
 
     def setup
-      unless docker("images", 5) =~ /#{repository}\s+#{tag}/
-        docker "pull #{repository}:#{tag}", 60
+      unless docker("images", timeout: 5) =~ /#{repository}\s+#{tag}/
+        docker "pull #{repository}:#{tag}", timeout: 60
       end
     end
 
@@ -79,12 +87,20 @@ module RiakTestServer
 
     private
 
-    def docker(command, timeout=1)
+    def docker(command, options={})
       full_command = "#{@docker_bin} #{command}"
+      timeout = (options[:timeout] || 1)
+      allowed_exits = (options[:allowed_exits] || [0])
       Timeout.timeout(timeout) do
-        `#{full_command} 2>&1`.tap do |output|
-          raise "#{full_command} failed: #{output}" unless $?.exitstatus == 0
+        stdout, stderr, status = Open3.capture3(full_command)
+        unless(allowed_exits.include?(status.exitstatus))
+          raise [
+            "#{full_command} exited with unexpected status #{status.exitstatus} (expected: #{allowed_exits.inspect})",
+            "STDOUT: #{stdout}",
+            "STDERR: #{stderr}"
+          ].join("\n")
         end
+        stdout
       end
     rescue Timeout::Error
       raise RiakTestServer::Error, "Timed out running `#{full_command}` after #{timeout} seconds; is your Docker host running?"
@@ -109,7 +125,7 @@ module RiakTestServer
         @console_io = IO.popen([@docker_bin, "attach", @container_name], "r+", err: :out).tap{|io| io.sync = true}
         @console_io.puts("ok.")
         unless @console_io.expect(PROMPT, 10)
-          raise "Unable to get a prompt on the console"
+          raise "Unable to get a prompt on the console: @console_io.read"
         end
       end
 
