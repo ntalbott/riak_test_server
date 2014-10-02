@@ -111,7 +111,7 @@ module RiakTestServer
       raise "Command not terminated with a `.`: #{command}" unless command =~ /\.\s*\z/
       attach do |io|
         io.puts(command)
-        response = io.expect(PROMPT, 10)
+        response = io.expect(PROMPT, 60)
         if response
           PROMPT.match(response.first).pre_match
         else
@@ -124,7 +124,7 @@ module RiakTestServer
       unless @console_io
         @console_io = IO.popen([@docker_bin, "attach", @container_name], "r+", err: :out).tap{|io| io.sync = true}
         @console_io.puts("ok.")
-        unless @console_io.expect(PROMPT, 10)
+        unless @console_io.expect(PROMPT, 60)
           raise "Unable to get a prompt on the console: @console_io.read"
         end
       end

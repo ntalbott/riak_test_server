@@ -1,4 +1,8 @@
-# Unreleased
+# 1.1.2
+
+* Increase container communication timeout.
+
+# 1.1.1
 
 * Kill stopped containers even when not :force_restart.
 
