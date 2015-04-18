@@ -64,7 +64,7 @@ module RiakTestServer
 
     def setup
       unless docker("images", timeout: 5) =~ /#{repository}\s+#{tag}/
-        docker "pull #{repository}:#{tag}", timeout: 60
+        docker "pull #{repository}:#{tag}", timeout: 120
       end
     end
 
